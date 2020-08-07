@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  # Backend API
+  smart-brain-app:
+    container_name: backend
+    # by using "image", container will be build via hub.docker pre-defined image.
+    # image: node:slim
+    # by using "build", container will be build via our own Dockerfile
+    build: ./
+    command: npm start
+    working_dir: /usr/src/smart-brain-api
+    environment:
+      POSTGRES_URI: postgres://foo:secret@postgres:5432/smart-brain-docker
+    links:
+      - postgres
+    ports:
+      - "3000:3000"
+    # maping between files in locahost directly to the files in the container
+    volumes:
+      - ./:/usr/src/smart-brain-api
+    # Postgres Database
+  postgres:
+    environment:
+      #POSTGRES_URI: postgres://foo:secret@postgres:5432/smart-brain-docker
+      POSTGRES_USER: foo
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: smart-brain-docker
+      # 'postgres' needs to be linked using 'links:' for the container to communicate to each other.
+      POSTGRES_HOST: postgres
+
+    # 'image' already has the container name set
+    # container_name: postgres
+    # we aren't using image because we have an Dockerfile instead.
+    # image: postgres
+    build: ./postgres
+    ports:
+      - "5432-5432"

@@ -10,31 +10,9 @@ const signin = require("./controllers/signin");
 const profile = require("./controllers/profile");
 const image = require("./controllers/image");
 
-/* //Postgres BD Schema
-//psql postgres://smartbrainapp:test@localhost:5432/smart-brain-db
-
-CREATE TABLE users (
-	id serial PRIMARY KEY,
-	name varchar(100),
-	email text UNIQUE NOT NULL,
-	entries BIGINT DEFAULT 0,
-	joined TIMESTAMP NOT NULL
-);
-
-CREATE TABLE login (
-	id serial PRIMARY KEY,
-	hash varchar(100) NOT NULL,
-	email text UNIQUE NOT NULL
-); */
-
 const db = knex({
   client: "pg",
-  connection: {
-    host: "127.0.0.1",
-    user: "smartbrainapp",
-    password: "test",
-    database: "smart-brain-db",
-  },
+  connection: process.env.POSTGRES_URI,
 });
 
 const app = express();
