@@ -38,11 +38,23 @@ const signToken = (email) => {
   const jwtPayload = { email };
   return jwt.sign(jwtPayload, process.env.JWT_SECRET, { expiresIn: "5h" }); // Redis also helps with this expire stuff
 };
+
+const setToken = (key, value) => {
+  return Promise.resolve(redisClient.set(key, value));
+};
+
 const createSession = (user) => {
   const { email, id } = user;
   const token = signToken(email);
-  return { success: true, userId: id, token: token };
+  return setToken(token, id)
+    .then(() => ({
+      success: true,
+      userId: id,
+      token: token,
+    }))
+    .catch(console.log);
 };
+
 /* This is the main callback function that handle the response (res) to
 the app.post('/signin') endpoint and not any of its helper functions*/
 const handleAuthentication = (db, bcrypt) => (req, res) => {
