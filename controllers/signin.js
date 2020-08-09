@@ -2,9 +2,9 @@ const jwt = require("jsonwebtoken");
 const redis = require("redis");
 
 //Setup Redis:
-const redisClient = redis.createClient(process.env.REDIS_URI);
+const redisClient = redis.createClient(process.env.REDIS_URI); //this env variable connect the API container with the Redis container.
 
-// This is a helper function and should never touch the 'res' object
+// This is a helper function and should always try to avoid touching the 'res' object.
 const checkCredentials = (db, bcrypt, req) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -21,7 +21,7 @@ const checkCredentials = (db, bcrypt, req) => {
           .select("*")
           .from("users")
           .where("email", "=", email)
-          .then((user) => user[0])
+          .then((user) => user[0]) // if everthing is ok, checkCredentials() returns this object
           .catch((err) => Promise.reject("unable to get user"));
       } else {
         Promise.reject("wrong credentials");
@@ -30,8 +30,15 @@ const checkCredentials = (db, bcrypt, req) => {
     .catch((err) => Promise.reject("wrong credentials"));
 };
 
-const getAuthTokenId = () => {
-  console.log("Auth ok");
+// this helper function actually responds on behalf of handleAuthentication() using directly the 'res' object.
+const getAuthTokenId = (req, res) => {
+  const { authorization } = req.headers;
+  return redisClient.get(authorization, (err, reply) => {
+    if (err || !reply) {
+      return res.status(400).json("Unauthorized");
+    }
+    return res.json({ id: reply });
+  });
 };
 
 const signToken = (email) => {
@@ -60,7 +67,7 @@ the app.post('/signin') endpoint and not any of its helper functions*/
 const handleAuthentication = (db, bcrypt) => (req, res) => {
   const { authorization } = req.headers;
   return authorization
-    ? getAuthTokenId()
+    ? getAuthTokenId(req, res)
     : checkCredentials(db, bcrypt, req)
         .then((data) => {
           return data.id && data.email
