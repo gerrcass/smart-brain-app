@@ -1,26 +1,60 @@
-const handleSignin = (db, bcrypt) => (req, res) => {
+const jwt = require("jsonwebtoken");
+
+// This is a helper function and should never touch the 'res' object
+const checkCredentials = (db, bcrypt, req) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).json('incorrect form submission');
+    return Promise.reject("incorrect form submission");
   }
-  db.select('email', 'hash').from('login')
-    .where('email', '=', email)
-    .then(data => {
+  return db
+    .select("email", "hash")
+    .from("login")
+    .where("email", "=", email)
+    .then((data) => {
       const isValid = bcrypt.compareSync(password, data[0].hash);
       if (isValid) {
-        return db.select('*').from('users')
-          .where('email', '=', email)
-          .then(user => {
-            res.json(user[0])
-          })
-          .catch(err => res.status(400).json('unable to get user'))
+        return db
+          .select("*")
+          .from("users")
+          .where("email", "=", email)
+          .then((user) => user[0])
+          .catch((err) => Promise.reject("unable to get user"));
       } else {
-        res.status(400).json('wrong credentials')
+        Promise.reject("wrong credentials");
       }
     })
-    .catch(err => res.status(400).json('wrong credentials'))
-}
+    .catch((err) => Promise.reject("wrong credentials"));
+};
+
+const getAuthTokenId = () => {
+  console.log("Auth ok");
+};
+
+const signToken = (email) => {
+  const jwtPayload = { email };
+  return jwt.sign(jwtPayload, process.env.JWT_SECRET, { expiresIn: "5h" }); // Redis also helps with this expire stuff
+};
+const createSession = (user) => {
+  const { email, id } = user;
+  const token = signToken(email);
+  return { success: true, userId: id, token: token };
+};
+/* This is the main callback function that handle the response (res) to
+the app.post('/signin') endpoint and not any of its helper functions*/
+const handleAuthentication = (db, bcrypt) => (req, res) => {
+  const { authorization } = req.headers;
+  return authorization
+    ? getAuthTokenId()
+    : checkCredentials(db, bcrypt, req)
+        .then((data) => {
+          return data.id && data.email
+            ? createSession(data)
+            : Promise.reject(data);
+        })
+        .then((session) => res.json(session))
+        .catch((err) => res.status(400).json(err));
+};
 
 module.exports = {
-  handleSignin: handleSignin
-}
+  handleAuthentication: handleAuthentication,
+};

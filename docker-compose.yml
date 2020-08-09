@@ -12,6 +12,7 @@ services:
     working_dir: /usr/src/smart-brain-api
     environment:
       POSTGRES_URI: postgres://foo:secret@postgres:5432/smart-brain-docker
+      JWT_SECRET: shhhhh
     links:
       - postgres
     ports:

@@ -25,19 +25,33 @@ app.get("/", (req, res) => {
   //res.send(db.users);
   res.send("It' is working");
 });
-app.post("/signin", signin.handleSignin(db, bcrypt));
+
+/* for demonstration purposes, handleAuthentication() is called without 'req' and 'res',
+because it's a high order function (a function that return a function) where the returned
+function gets called again (with 'db' and 'bcrypt' inyected) using 'req' and 'res' as
+declared in handleAuthentication() function which is the shape expected by app.post()
+function. It's automatically called like this:
+
+app.post("/signin", signin.handleAuthentication(db, bcrypt)(req,res));
+*/
+app.post("/signin", signin.handleAuthentication(db, bcrypt));
+
 app.post("/register", (req, res) => {
   register.handleRegister(req, res, db, bcrypt);
 });
+
 app.get("/profile/:id", (req, res) => {
   profile.handleProfileGet(req, res, db);
 });
+
 app.post("/profile/:id", (req, res) =>
   profile.handleProfileUpdate(req, res, db)
 );
+
 app.put("/image", (req, res) => {
   image.handleImage(req, res, db);
 });
+
 app.post("/imageurl", (req, res) => {
   image.handleApiCall(req, res);
 });
