@@ -1,4 +1,8 @@
 const jwt = require("jsonwebtoken");
+const redis = require("redis");
+
+//Setup Redis:
+const redisClient = redis.createClient(process.env.REDIS_URI);
 
 // This is a helper function and should never touch the 'res' object
 const checkCredentials = (db, bcrypt, req) => {

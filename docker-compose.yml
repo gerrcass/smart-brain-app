@@ -12,15 +12,18 @@ services:
     working_dir: /usr/src/smart-brain-api
     environment:
       POSTGRES_URI: postgres://foo:secret@postgres:5432/smart-brain-docker
+      REDIS_URI: redis://redis:6379
       JWT_SECRET: shhhhh
     links:
       - postgres
+      - redis
     ports:
       - "3000:3000"
     # maping between files in locahost directly to the files in the container
     volumes:
       - ./:/usr/src/smart-brain-api
-    # Postgres Database
+
+  # Postgres Database
   postgres:
     environment:
       #POSTGRES_URI: postgres://foo:secret@postgres:5432/smart-brain-docker
@@ -37,3 +40,9 @@ services:
     build: ./postgres
     ports:
       - "5432-5432"
+
+  # Redis Server
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
