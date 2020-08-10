@@ -1,3 +1,5 @@
+const createSession = require("./signin").createSession;
+
 const handleRegister = (req, res, db, bcrypt) => {
   const { email, name, password } = req.body;
   if (!email || !name || !password) {
@@ -21,12 +23,17 @@ const handleRegister = (req, res, db, bcrypt) => {
             joined: new Date(),
           })
           .then((user) => {
-            res.json(user[0]);
+            createSession(user[0]).then((session) => {
+              res.json({
+                user: user[0],
+                session,
+              });
+            });
           });
       })
       .then(trx.commit)
       .catch(trx.rollback);
-  }).catch((err) => res.status(400).json("unable to register"));
+  }).catch((err) => res.status(400).json(`unable to register ${err}`));
 };
 
 module.exports = {
