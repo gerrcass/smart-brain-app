@@ -8,7 +8,7 @@ const redisClient = redis.createClient(process.env.REDIS_URI); //this env variab
 const checkCredentials = (db, bcrypt, req) => {
   const { email, password } = req.body;
   if (!email || !password) {
-    return Promise.reject("incorrect form submission");
+    return Promise.reject("Incorrect form submission");
   }
   return db
     .select("email", "hash")
@@ -22,12 +22,11 @@ const checkCredentials = (db, bcrypt, req) => {
           .from("users")
           .where("email", "=", email)
           .then((user) => user[0]) // if everthing is ok, checkCredentials() returns this object
-          .catch((err) => Promise.reject("unable to get user"));
+          .catch((err) => Promise.reject("Unable to get user"));
       } else {
-        Promise.reject("wrong credentials");
+        return Promise.reject("Wrong credentials");
       }
-    })
-    .catch((err) => Promise.reject("wrong credentials"));
+    });
 };
 
 // this helper function actually responds on behalf of handleAuthentication() using directly the 'res' object.
