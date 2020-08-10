@@ -33,6 +33,21 @@ const checkCredentials = (db, bcrypt, req) => {
 // this helper function actually responds on behalf of handleAuthentication() using directly the 'res' object.
 const getAuthTokenId = (req, res) => {
   const { authorization } = req.headers;
+  const { isSigningOut } = req.body;
+
+  // When users click on "SignOut" button.
+  if (isSigningOut) {
+    return redisClient.del(authorization, (err, reply) => {
+      if (err || !reply) {
+        return res.status(400).json("Something went wrong!");
+      }
+      return res.json({
+        success: true,
+        message: "successfully logged out.",
+      });
+    });
+  }
+  // When users are already logged in.
   return redisClient.get(authorization, (err, reply) => {
     if (err || !reply) {
       return res.status(400).json("Unauthorized");
