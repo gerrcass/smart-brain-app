@@ -2,7 +2,11 @@ const jwt = require("jsonwebtoken");
 const redis = require("redis");
 
 //Setup Redis:
-const redisClient = redis.createClient(process.env.REDIS_URI); //this env variable connect the API container with the Redis container.
+const redisClient = redis.createClient({
+  url: process.env.REDIS_URI
+});
+redisClient.on('error', (err) => console.log('Redis Client Error', err));
+redisClient.connect();
 
 // This is a helper function and should always try to avoid touching the 'res' object.
 const checkCredentials = (db, bcrypt, req) => {
@@ -14,45 +18,35 @@ const checkCredentials = (db, bcrypt, req) => {
     .select("email", "hash")
     .from("login")
     .where("email", "=", email)
-    .then((data) => {
-      const isValid = bcrypt.compareSync(password, data[0].hash);
-      if (isValid) {
+    .then(data => {
+      const match = bcrypt.compareSync(password, data[0].hash);
+      if (match) {
         return db
           .select("*")
           .from("users")
           .where("email", "=", email)
-          .then((user) => user[0]) // if everthing is ok, checkCredentials() returns this object
-          .catch((err) => Promise.reject("Unable to get user"));
+          .then((user) => (user[0])) // if everthing is ok, checkCredentials() returns this object
+          .catch((err) => Promise.reject(`Unable to get user: ${err}`));
       } else {
+        //return 'Wrong credentials'
         return Promise.reject("Wrong credentials");
       }
     });
 };
 
 // this helper function actually responds on behalf of handleAuthentication() using directly the 'res' object.
-const getAuthTokenId = (req, res) => {
+const getAuthTokenId = async (req, res) => {
   const { authorization } = req.headers;
   const { isSigningOut } = req.body;
 
   // When users click on "SignOut" button.
   if (isSigningOut) {
-    return redisClient.del(authorization, (err, reply) => {
-      if (err || !reply) {
-        return res.status(400).json("Something went wrong!");
-      }
-      return res.json({
-        success: true,
-        message: "successfully logged out.",
-      });
-    });
+    const reply = await redisClient.del(authorization)
+    return reply ? res.json({ success: true, message: "successfully logged out." }) : res.status(400).json("Something went wrong!")
   }
   // When users are already logged in.
-  return redisClient.get(authorization, (err, reply) => {
-    if (err || !reply) {
-      return res.status(400).json("Unauthorized");
-    }
-    return res.json({ id: reply });
-  });
+  const reply = await redisClient.get(authorization)
+  return reply ? res.json({ id: reply }) : res.status(400).json("Unauthorized")
 };
 
 const signToken = (email) => {
@@ -80,16 +74,18 @@ const createSession = (user) => {
 the app.post('/signin') endpoint and not any of its helper functions*/
 const handleAuthentication = (db, bcrypt) => (req, res) => {
   const { authorization } = req.headers;
+  //return authorization ? res.json(authorization) : res.json({ status: 'BAD', count: 5, auth: authorization })
+
   return authorization
     ? getAuthTokenId(req, res)
     : checkCredentials(db, bcrypt, req)
-        .then((data) => {
-          return data.id && data.email
-            ? createSession(data)
-            : Promise.reject(data);
-        })
-        .then((session) => res.json(session))
-        .catch((err) => res.status(400).json(err));
+      .then((data) => {
+        return data.id && data.email
+          ? createSession(data)
+          : Promise.reject(data);
+      })
+      .then((session) => res.json(session))
+      .catch((err) => res.status(400).json(err));
 };
 
 module.exports = {

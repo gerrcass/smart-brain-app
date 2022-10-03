@@ -1,6 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const bcrypt = require("bcrypt-nodejs");
+const bcrypt = require('bcrypt');
 const cors = require("cors");
 const knex = require("knex");
 const morgan = require("morgan");
@@ -19,7 +19,30 @@ const db = knex({
 const app = express();
 
 app.use(morgan("combined"));
+//app.use(cors());
+/* app.use(cors({
+  origin: '*'
+}));
+ */
+
+/* const whitelist = ['http://localhost:3000', 'https://localhost:3000', 'http://localhost:3001', 'https://localhost:3001']
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error())
+    }
+  },
+  methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH']
+}
+app.use(cors(corsOptions)); */
+
+
 app.use(cors());
+//app.options('*', cors())
+
+
 app.use(bodyParser.json());
 
 app.get("/", (req, res) => {
@@ -57,6 +80,10 @@ app.post("/imageurl", auth.requireAuth, (req, res) => {
   image.handleApiCall(req, res);
 });
 
-app.listen(3000, () => {
-  console.log("app is running on port 3000");
+/* app.listen(process.env.EXPRESS_PORT, () => {
+  console.log("App is running on port ", process.env.EXPRESS_PORT)
+}) */
+
+app.listen(4000, () => {
+  console.log("app is running on port 4000");
 });

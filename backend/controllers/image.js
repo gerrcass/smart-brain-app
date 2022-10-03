@@ -1,3 +1,5 @@
+//import getRankEmoji from './profile'
+const profile = require("./profile");
 const Clarifai = require("clarifai");
 
 //You must add your own API key here from Clarifai.
@@ -21,7 +23,9 @@ const handleImage = (req, res, db) => {
     .increment("entries", 1)
     .returning("entries")
     .then((entries) => {
-      res.json(entries[0]);
+      const getEmoji = profile.getRankEmoji(entries[0].entries)
+      //const getEmoji = '🤐'
+      res.json({ ...entries[0], rankEmoji: getEmoji });
     })
     .catch((err) => res.status(400).json("unable to get entries"));
 };

@@ -1,3 +1,8 @@
+const getRankEmoji = (rank) => {
+  const emojis = ["😄", "😀", "😃", "😁", "😜", "🥰", "😍", "😎", "💪", "🚀"];
+  return emojis[rank >= emojis.length ? emojis.length - 1 : rank];
+}
+
 const handleProfileGet = (req, res, db) => {
   const { id } = req.params;
   db.select("*")
@@ -5,7 +10,8 @@ const handleProfileGet = (req, res, db) => {
     .where({ id })
     .then((user) => {
       if (user.length) {
-        res.json(user[0]);
+        const emoji = getRankEmoji(user[0].entries)
+        res.json(Object.assign(user[0], { rankEmoji: emoji }));
       } else {
         res.status(400).json("Not found");
       }
@@ -31,4 +37,5 @@ const handleProfileUpdate = (req, res, db) => {
 module.exports = {
   handleProfileGet,
   handleProfileUpdate,
+  getRankEmoji
 };
