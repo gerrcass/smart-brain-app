@@ -6,8 +6,8 @@ These are the technologies and libraries we used to build this project.
 
 - Docker
 - React.js
-- Express.js 
-- PostgreSQL DB/Knex
+- Node.js / Express.js 
+- PostgreSQL DB / Knex
 - Redis
 - Clarifai API
 - Bcrypt for secure Signin/Registering
